@@ -1,0 +1,243 @@
+from google.colab import drive
+drive.mount('/content/drive')
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+## *1.1 Reading up the training data*
+
+data = pd.read_csv('/content/drive/My Drive/retail_data/train.tsv', delimiter='\t')
+data.head()
+
+data.columns
+
+data.shape
+
+data.info()
+
+data.describe()
+
+data['price'].describe()
+
+data.dtypes
+
+## Getting the number missing values
+data.isnull().sum()
+
+1.1 **Generating a correlation matrix/ Heatmap**
+
+
+
+
+plt.matshow(data.corr())
+
+data.corr().style.background_gradient(cmap = 'coolwarm')
+
+import seaborn as sns
+
+sns.heatmap(data.corr(), annot = True)
+
+### *1.1a Analysis*
+Looking at the above data we can find that there is some correlation between the price and the shipping charge, and the item condition and shipping cost
+
+## *1.2 Price Analysis*
+
+- Here, we will look out for the factor that leads to an increase in price.
+- We will see how much does a brand name affects the price of the commodity.
+
+data.price.describe()
+
+# Statistical Analysis of the price
+quants = [0.05, 0.10, 0.25, 0.50, 0.75, 0.95, 0.99]
+data.quantile(quants)
+
+plt.hist(data['price'], bins = 50, range = [0,200], histtype = 'bar')
+plt.show()
+
+- We can see there is some skewness in the price, so we will normalize it using logarithm
+
+plt.hist(np.log(data.price + 1), bins = 50)
+plt.show()
+
+plt.scatter(data.price.values, range(data.shape[0]))
+
+# Price between two ranges
+
+data.price.between(1700,2000).sum()
+
+## ***1.3 Condition Analysis***
+
+# Getting the amount of condition id present in the dataset
+data.item_condition_id.value_counts()
+
+# PLotting the condition
+data.item_condition_id.value_counts().plot(kind = 'bar')
+
+- There are 5 unique condition id, among which the 'item_condition_id - 1' has the highest count
+
+## Checking the description of products
+data.item_description[data.item_condition_id == 5][:15]
+
+- Going by the item description of item condition id "5", it seems like they are of the worst condition among others
+
+data.item_description[data.item_condition_id == 1][:15]
+
+- Going by the item description of item condition id "1", it seems like they are new, or brand new
+
+sns.boxplot(x = 'item_condition_id', y = 'price', data = data[data['price'] < 100])
+
+- The prices are decreasing as we go from condition id 1 to 4, but in case of condition id 5 it is high.
+- That might be because of the its very less frequency, and there are not enough data points to compare.
+
+## *1.4 Shipment of product*
+
+data.shipping.head()
+
+- Seems like there are only two categories for shipment, the one where the seller pays and another the buyer pays for the shipment
+
+data.shipping.value_counts()
+
+- The shipping fee paid by the seller is less than the fee paid by the buyer
+
+# percentage counts
+data.shipping.value_counts(normalize = True)
+
+# Avg Shipping cost for shipping condition
+data.groupby('shipping').price.mean()
+
+data.groupby('shipping').price.mean().plot(kind = 'bar')
+
+##***1.5 Brand Details***
+
+# Number of unique brands
+data.brand_name.nunique()
+
+data.brand_name.unique()
+
+# Total unbranded products
+data.brand_name.isnull().sum()
+
+# Mean price of branded products
+data.groupby('brand_name').price.mean().head()
+
+# Most frequent brands
+data.brand_name.value_counts().nlargest(20)
+data.brand_name.value_counts().nlargest(20).plot(kind = 'bar')
+
+data.brand_name.value_counts().nlargest(5)
+
+# Least frequent brands
+data.brand_name.value_counts().nsmallest(5)
+
+### Making graphs using sns
+brands = data.brand_name.value_counts()
+brands[0:11].values, brands[0:11].index
+
+sns.barplot(brands[0:11].values, brands[0:11].index)
+
+# Most expensive brands
+data.groupby('brand_name').price.mean().nlargest(10).plot(kind = 'pie')
+
+# Cheapest brands
+data.groupby('brand_name').price.mean().nsmallest(10).plot.pie()
+
+data.groupby('brand_name').price.mean().nsmallest(10)
+
+## ***1.6 Product Categories***
+
+# Number of unique categories
+data.category_name.nunique()
+
+data.category_name.unique()
+
+data.category_name.value_counts().nlargest(10)
+
+data.category_name.value_counts().nlargest(10).plot(kind = 'bar')
+
+data.groupby('category_name').price.mean().nlargest(10).plot(kind = 'bar')
+
+data.category_name.head()
+
+### ***1.6A Splitting category name into different categories***
+
+data.category_name.str.split('/', expand = True).head()
+
+# Separating each column in the category
+data['main'] = data.category_name.str.split('/', expand = True)[0]
+data['cat1'] = data.category_name.str.split('/', expand = True)[1]
+data['cat2'] = data.category_name.str.split('/', expand = True)[2]
+data['cat3'] = data.category_name.str.split('/', expand = True)[3]
+
+data.cat1.head()
+
+data.shape, data.columns
+
+data.main.unique()
+
+data.main.value_counts()
+
+data.category_name[data.main == 'Kids'].value_counts().sum()
+# data.main[data.main == 'Kids'].value_counts()
+
+data[data.main == 'Kids'].cat1.value_counts()
+
+data[data['main'] == 'Kids'].cat2.value_counts()
+
+**Popular Categories by counts**
+
+data.cat1.value_counts()
+
+data.category_name[data.cat1 == 'Shoes'].value_counts().head()
+
+data[data.cat1 == 'Shoes'].cat2.value_counts()
+
+data.groupby(['main'])['price'].mean().plot(kind = 'bar')
+
+sns.barplot(x= 'main', y = 'price', data = data)
+
+# Top expensive products incombination of categories
+# data.groupby(['main','cat1','cat2'])['price'].mean()
+data.groupby(['main','cat1','cat2']).price.mean().nlargest(10)
+
+# Any free Products
+data.main[data.price == 0].value_counts()
+
+fp = data[data.price == 0]
+len(fp)
+
+# Free products in good condition
+gfp = fp[data.item_condition_id == 1]
+len(gfp)
+
+## Good condition free products with free shipping
+fpgs = gfp[gfp.shipping == 1]
+len(fpgs)
+# or fpgs.shape[0]---> Getting the shape of the fpgs and giving the number of rows
+
+fpgsn = fpgs[fpgs.brand_name == 'Nike']
+fpgsn, len(fpgsn)
+
+sns.boxplot(x = 'main', y = 'price', data = data[data.price < 100])
+
+## ***1.7 Pandas Profiling***
+
+*   Data exploring with a single command.
+*   But Fine details will be by going through detailed exploration.
+
+
+
+import pandas_profiling
+pfr = pandas_profiling.ProfileReport(data)
+
+# Storing the profiling
+pfr.to_file(outputfile = '/content/drive/My Drive/Projects- Data Science/Retail Project.html')
+
+## *1.8 Combining Dataset & PreProcessing*
+
+test = pd.read_csv('/content/drive/My Drive/retail_data/test.tsv', delimiter = '\t')
+test.head()
+
+data.shape, test.shape
+
