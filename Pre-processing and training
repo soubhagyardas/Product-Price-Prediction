@@ -1,0 +1,136 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from google.colab import drive
+drive.mount('/content/drive')
+
+data = pd.read_csv('/content/drive/My Drive/retail_data/train.tsv', delimiter = '\t')
+test = pd.read_csv('/content/drive/My Drive/retail_data/test.tsv', delimiter = '\t')
+
+## *Combining datasets and preprocessing*
+
+data.shape, test.shape
+
+data.columns, test.columns
+
+# Adding a column
+data['istrain'] = 1
+test['istrain'] = 0
+
+data.shape
+
+# Renaming item_id to id
+data.rename(columns = {'train_id': 'id'}, inplace = True)
+test.rename(columns = {'test_id': 'id'}, inplace = True)
+
+
+data.columns
+
+data = data.drop(['price'], axis = 1)
+
+# Combining the datasets
+data_test = pd.concat([data, test], axis=0)
+
+data_test.shape
+
+data_test.dtypes
+
+# Categorical columns
+cat_var = ['name', 'item_condition_id', 'category_name', 'brand_name', 'shipping', 'item_description']
+
+for i in cat_var:
+  data_test[i] = data_test[i].astype('category').cat.as_ordered()
+
+data_test.dtypes, data_test.shape
+
+# Creating codes for categorical variables
+for i in cat_var:
+  data_test[i] = data_test[i].cat.codes
+
+data_test.head()
+
+## *Breaking the processed data*
+
+train_data = data_test[data_test.istrain == 1]
+test_data = data_test[data_test.istrain == 0]
+
+train_data.shape, test_data.shape
+
+data.columns
+
+train_data.columns
+
+data1 = pd.read_csv('/content/drive/My Drive/retail_data/train.tsv', delimiter = '\t')
+
+data1.columns
+
+train_data['price'] = data1.price
+
+# Taking log of individual variable beacause output is calculated in RMSLE
+train_data.price = train_data['price'].apply(lambda x: np.log(x) if x > 0 else x)
+# Or apply(lambda x: np.log(x) if x>0 else x)
+
+x_train, y_train = train_data.drop('price', axis = 1), train_data.price
+
+x_train.shape, y_train.shape
+
+## *Training the model*
+
+# Import Library
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+
+- Regressor, as we have to predict the price
+
+## Optional
+
+from xgboost import XGBRegressor
+
+mod = RandomForestRegressor(n_jobs = -1)
+
+%time mod.fit(x_train, y_train)
+
+%time mod.score(x_train, y_train)
+
+grid = {
+    'min_samples_leaf' : [3,10,25,50,75,100],
+    'max_features' : ['sqrt', 'log2', 0.5, 3, 6]}
+
+gd = GridSearchCV(mod,grid, cv = 3,verbose = 50)
+
+gd.fit(x_train, y_train)
+
+gd.best_estimator_
+
+## Main
+
+rf = RandomForestRegressor(n_jobs = -1, n_estimators= 50, random_state = 42, max_features = 0.5, min_samples_leaf=3)
+
+# Fitting the model
+%time rf.fit(x_train,y_train)
+
+# Scoring the model
+rf.score(x_train, y_train)
+
+test_data.shape
+
+# Predicting
+pred = rf.predict(test_data)
+
+pred
+
+## Reversing the log prices
+pred = pd.Series(np.exp(pred))
+
+pred.head()
+
+## Submission
+
+test.id
+
+final = pd.concat([test.id, pred], axis = 1)
+
+final.to_csv('final_result.csv', index = False)
+
