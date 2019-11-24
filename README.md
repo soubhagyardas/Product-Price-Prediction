@@ -1,12 +1,6 @@
 # Product-Price-Prediction
-This project is about detecting the right price of the product available in the app where some of the products were used or vintage or new. The dataset had around 2.1 million observations listed out of which 1.4 million observations were on the training dataset.
+This project is about detecting the right price of the product available in the app where some of the products were used or vintage or new.
 
-##About the company:
-Retailx Portal is an online marketplace that allows individuals to buy and sell new and used items, such as electronics, jewellery, apparel, shoes, books, CDs, DVDs and home accessories. The company was established in Japan and subsequently extended its operations to US and UK markets.
-
-##Description of the Project:
-Among those Japanese users utilizing one of the country’s many community marketplace apps, 94% were found to be using this portal. The business pitch adopted by Retailx for its mobile app is “Retailx, The Selling App.”
-Retailx organized a challenge in which they published some of the products information. Data is available for approximately 1.4 million products.
 In this competition, the challenge is to build an algorithm that automatically suggests the right product prices. The dataset is provided with user-inputted text descriptions of their products, including details like product category name, brand name, and item condition.
 Retailx would like to put the best model into production and suggest users the realistic price along with the real time comparison, whenever any new item is getting uploaded for the sale.
 
